@@ -4,9 +4,12 @@ import random
 import argparse
 import time
 from enums import DeckType, Colors, LocationKeys
-from player import Player, HumanPlayer, AIPlayer
+from player import Player
+from humanplayer import HumanPlayer
+from aiplayer import AIPlayer
 from cards import Deck
 from trade_matrix import TradeMatrix
+import settings
 
 JAIL_BOARD_SPACE = 40
 VISITING_JAIL_BOARD_SPACE = 10
@@ -43,15 +46,17 @@ class RealEstate(Location):
         
         if self.owner is not None:
             rent = self.calculate_rent(board, double_if_owned)
-            print(f"player {player.player_number} must pay ${rent} rent to player {self.owner.player_number}")
-            time.sleep(0.5)
+            print(f"Player {player.player_number} must pay ${rent} rent to player {self.owner.player_number}")
+            if not settings.fast:
+                time.sleep(0.5)
             player.charge(rent)
             self.owner.add_money(rent)
 
         elif self.owner is None:
             if player.decide_purchase(self):
-                print(f"player {player.player_number} buys {self.name_colored}")
-                time.sleep(0.5)
+                print(f"Player {player.player_number} buys {self.name_colored}")
+                if not settings.fast:
+                    time.sleep(0.5)
                 player.charge(self.cost)
                 player.gain_real_estate(self)
             else:
@@ -63,15 +68,17 @@ class RealEstate(Location):
         pass
 
     def mortgage(self):
-        print(f"player {self.owner.player_number} mortgages {self.name_colored}")
-        time.sleep(0.5)
+        print(f"Player {self.owner.player_number} mortgages {self.name_colored}")
+        if not settings.fast:
+            time.sleep(0.5)
         self.is_mortgaged = True
         self.owner.add_money(self.mortgage_amount, False)
         self.owner.mortgaged_property_names.add(self.name)
 
     def unmortgage(self):
-        print(f"player {self.owner.player_number} unmortgages {self.name_colored}")
-        time.sleep(0.5)
+        print(f"Player {self.owner.player_number} unmortgages {self.name_colored}")
+        if not settings.fast:
+            time.sleep(0.5)
         self.owner.charge(self.unmortgage_amount)
         self.is_mortgaged = False
         self.owner.mortgaged_property_names.remove(self.name)
@@ -94,14 +101,16 @@ class Property(RealEstate):
         return self.rent[0]
 
     def build_house(self):
-        print(f"player {self.owner.player_number} builds a house on {self.name_colored}")
-        time.sleep(0.5)
+        print(f"Player {self.owner.player_number} builds a house on {self.name_colored}")
+        if not settings.fast:
+            time.sleep(0.5)
         self.owner.charge(self.build_cost)
         self.num_houses += 1
 
     def sell_house(self):
-        print(f"player {self.owner.player_number} sells a house on {self.name_colored}")
-        time.sleep(0.5)
+        print(f"Player {self.owner.player_number} sells a house on {self.name_colored}")
+        if not settings.fast:
+            time.sleep(0.5)
         self.owner.add_money(self.build_cost // 2, False)
         self.num_houses -= 1
             
@@ -247,26 +256,27 @@ class Board():
 
     # advance player to specified space (index). if passes go, collect 200
     def advance(self, player: Player, space, double_if_owned=False):
-        # print(f"player {player.player_number} advances to space {space}")
-        time.sleep(0.5)
         if player.board_space >= space:
-            print(f"player {player.player_number} passes Go")
-            time.sleep(0.5)
+            print(f"Player {player.player_number} passes Go")
+            if not settings.fast:
+                time.sleep(0.5)
             player.add_money(200)
         self.land(player, space, double_if_owned)
 
     # send player directly to space index
     def land(self, player: Player, space, double_if_owned=False):
         player.board_space = space
-        print(f"player {player.player_number} lands on {self.locations[self.spaces[space]].name_colored}")
-        time.sleep(0.5)
+        print(f"Player {player.player_number} lands on {self.locations[self.spaces[space]].name_colored}")
+        if not settings.fast:
+            time.sleep(0.5)
         auction = self.locations[self.spaces[space]].land(player, self, double_if_owned)
         if auction:
             self.perform_auction(self.locations[self.spaces[space]], player)
     
     def perform_auction(self, location, player):
-        print(f"performing auction for {location.name_colored}")
-        time.sleep(0.5)
+        print(f"Performing auction for {location.name_colored}")
+        if not settings.fast:
+            time.sleep(0.5)
         # add players to bid queue
         current_player_i = player.player_number - 1
         bid_queue = []
@@ -282,11 +292,13 @@ class Board():
                 break
             bid = player.decide_bid(location, current_bid)
             if bid < current_bid + 10: # must do at least $10 increments
-                print(f"player {player.player_number} drops out of the auction")
-                time.sleep(0.5)
+                print(f"Player {player.player_number} drops out of the auction")
+                if not settings.fast:
+                    time.sleep(0.5)
                 continue
-            print(f"player {player.player_number} bids ${bid}")
-            time.sleep(0.5)
+            print(f"Player {player.player_number} bids ${bid}")
+            if not settings.fast:
+                time.sleep(0.5)
             highest_bidder = player
             current_bid = bid
             bid_queue.append(player)
@@ -294,22 +306,25 @@ class Board():
         if current_bid == 0:
             return
         
-        print(f"player {highest_bidder.player_number} wins the auction")
-        time.sleep(0.5)
+        print(f"Player {highest_bidder.player_number} wins the auction")
+        if not settings.fast:
+            time.sleep(0.5)
         highest_bidder.charge(current_bid)
         highest_bidder.gain_real_estate(location)
         
 
     def send_to_jail(self, player: Player):
         # for the purposes of this simulation, jail is off the board
-        print(f"player {player.player_number} goes to jail")
-        time.sleep(0.5)
+        print(f"Player {player.player_number} goes to jail")
+        if not settings.fast:
+            time.sleep(0.5)
         player.board_space = JAIL_BOARD_SPACE
         player.jail_counter = 3
     
     def get_out_of_jail(self, player: Player):
-        print(f"player {player.player_number} gets out of jail")
-        time.sleep(0.5)
+        print(f"Player {player.player_number} gets out of jail")
+        if not settings.fast:
+            time.sleep(0.5)
         player.board_space = VISITING_JAIL_BOARD_SPACE # puts them on board space 10
         player.jail_counter = 0
 
@@ -323,25 +338,25 @@ class Game():
     def play(self):
         doubles = 0
         curr_player_i = -1
-        # current_player = self.board.players[0]
-        # TODO: add functions to ask player to build houses/make trades throughout turn
         while not self.is_over:
-            command = input("Press enter to continue game, or type p to see the board state:")
-            if command == "p":
-                self.print_game_state()
-                input("Press enter to continue game:")
-
             if doubles == 0 or current_player.jail_counter > 0:
                 curr_player_i = (curr_player_i + 1) % len(self.board.players)
                 current_player = self.board.players[curr_player_i]
-                print(f"\nplayer {current_player.player_number}'s turn")
-                time.sleep(0.5)
+                print(f"\nPlayer {current_player.player_number}'s turn")
+                if not settings.fast:
+                    time.sleep(0.5)
+            
+            command = input("Press enter to continue game, or type p to see the board state: ")
+            if command == "p":
+                self.print_game_state()
+                input("Press enter to continue game:")
             
             die1, die2 = self.roll_dice()
 
             if current_player.jail_counter > 0:
-                print(f"player {current_player.player_number} is in jail")
-                time.sleep(0.5)
+                print(f"Player {current_player.player_number} is in jail")
+                if not settings.fast:
+                    time.sleep(0.5)
                 if current_player.will_get_out_of_jail() or die1 == die2: # in this function player will handle themselves
                     self.board.get_out_of_jail(current_player)
                 else:
@@ -350,17 +365,20 @@ class Game():
                         self.board.get_out_of_jail(current_player)
                     else:
                         print(f"\nDie roll: {die1, die2}")
-                        time.sleep(0.5)
+                        if not settings.fast:
+                            time.sleep(0.5)
                         current_player.jail_counter -= 1
-                        print(f"player {current_player.player_number} is in jail for {current_player.jail_counter} more turns\n")
-                        time.sleep(0.5)
+                        print(f"Player {current_player.player_number} is in jail for {current_player.jail_counter} more turns\n")
+                        if not settings.fast:
+                            time.sleep(0.5)
                         continue
             else: # if player wasn't in jail, doubles allow player to move again
                 if die1 == die2:
                     doubles += 1
                     if doubles >= 3:
-                        print(f"player {current_player.player_number} rolled doubles for the third time and got sent to jail.\n")
-                        time.sleep(0.5)
+                        print(f"Player {current_player.player_number} rolled doubles for the third time and got sent to jail.\n")
+                        if not settings.fast:
+                            time.sleep(0.5)
                         self.board.send_to_jail(current_player)
                         doubles = 0
                         continue
@@ -368,30 +386,34 @@ class Game():
                     doubles = 0
 
             print(f"\nDie roll: {die1, die2}")
-            time.sleep(0.5)
+            if not settings.fast:
+                time.sleep(0.5)
             next_space = (current_player.board_space + self.board.roll_total) % len(self.board.spaces)
             print(f"Next space: {self.board.locations[self.board.spaces[next_space]].name_colored}")
-            time.sleep(0.5)
+            if not settings.fast:
+                time.sleep(0.5)
             self.board.advance(current_player, next_space)
             if current_player.money < 0:
                 self.is_over = True
-            # self.print_game_state()
-            print()
 
         print(f"Game over: Player {current_player.player_number} lost")
-        time.sleep(0.5)
+        if not settings.fast:
+            time.sleep(0.5)
         print("Final Standings (total worth):")
-        time.sleep(0.5)
+        if not settings.fast:
+            time.sleep(0.5)
         for player in self.board.players:
             print(f"Player {player.player_number} ({player.token}): ${player.calculate_total_worth()}")
-            time.sleep(0.5)
+            if not settings.fast:
+                time.sleep(0.5)
         winner = self.board.players[0]
         for player in self.board.players:
             self.trade_matrix.print_player_state(player.player_number)
             if player.money > winner.money:
                 winner = player
         print(f"\nPlayer {winner.player_number} wins!")
-        time.sleep(0.5)
+        if not settings.fast:
+            time.sleep(0.5)
         
 
     def roll_dice(self):
@@ -401,8 +423,9 @@ class Game():
         return die1, die2
 
     def print_game_state(self):
-        print("board:")
-        time.sleep(0.5)
+        print("Board:")
+        if not settings.fast:
+            time.sleep(0.5)
         for i in range(len(self.board.spaces)):
             location = self.board.locations[self.board.spaces[i]]
             players = ""
@@ -415,31 +438,48 @@ class Game():
         for player in self.board.players:
             if player.jail_counter > 0:
                 players_in_jail += f"{player.token} "
-        print(f"jail: {players_in_jail}")
-        time.sleep(0.5)
+        print(f"Jail: {players_in_jail}")
+        if not settings.fast:
+            time.sleep(0.5)
 
         for player in self.board.players:
             self.trade_matrix.print_player_state(player.player_number)
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('n', choices=[str(i) for i in range(1, 9)]) # num players
+    parser.add_argument('h', choices=[str(i) for i in range(1, 9)]) # num human players
+    parser.add_argument('-f', '--fast', help='Turn on fast printing', action="store_true")
+    args = parser.parse_args()
 
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('n', choices=[str(i) for i in range(1, 9)]) # num_players
-    # args = parser.parse_args()
+    settings.init()
+    settings.fast = args.fast
+
+    print(settings.fast)
 
     tokens = set(["battleship", "boot", "cannon", "horse", "iron", "racecar", "dog", "thimble", "top hat", "wheelbarrow"])
     players = []
-    # num_players = int(args.n)
-    num_players = 2
-    for i in range(num_players-1):
-        players.append(AIPlayer(i+1, tokens.pop()))
-    players.append(HumanPlayer(num_players, tokens.pop()))
+    num_players = int(args.n)
+    num_humans = int(args.h)
+
+    for i in range(num_humans):
+        token = tokens.pop()
+        print(f"Player {i+1}: {token} (human)")
+        if not settings.fast:
+            time.sleep(0.5)
+        players.append(HumanPlayer(i+1, token))
+    for i in range(num_humans, num_players):
+        token = tokens.pop()
+        print(f"Player {i+1}: {token} (ai)")
+        if not settings.fast:
+            time.sleep(0.5)
+        players.append(AIPlayer(i+1, token))
+
     trade_matrix = TradeMatrix(players)
     for player in players:
         player.set_trade_matrix(trade_matrix)
     
-
     game = Game(players, trade_matrix)
     game.play()
 

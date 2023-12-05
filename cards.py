@@ -1,5 +1,6 @@
 import random
 import time
+import settings
 from enums import LocationKeys, DeckType
 
 
@@ -48,13 +49,15 @@ def chance6(player, board):
     
 def chance7(player, board):
     print(f"player {player.player_number} draws a Get Out Of Jail Free Card")
-    time.sleep(0.5)
+    if not settings.fast:
+        time.sleep(0.5)
     player.goojf_cards += 1
     return False
     
 def chance8(player, board):
     print(f"player {player.player_number} moves back 3 spaces")
-    time.sleep(0.5)
+    if not settings.fast:
+        time.sleep(0.5)
     board.land(player, player.board_space - 3)
     return True
     
@@ -66,7 +69,8 @@ def chance10(player, board):
     house_cost = 25
     hotel_cost = 100
     print(f"player {player.player_number} must pay ${house_cost} for each house and ${hotel_cost} for each hotel")
-    time.sleep(0.5)
+    if not settings.fast:
+        time.sleep(0.5)
     total = 0
 
     for property in player.properties.values():
@@ -90,7 +94,8 @@ def chance12(player, board):
     
 def chance13(current_player, board):
     print(f"player {current_player.player_number} must give each player $50")
-    time.sleep(0.5)
+    if not settings.fast:
+        time.sleep(0.5)
     amount = 50
     total = amount * (len(board.players) - 1)
     current_player.charge(total)
@@ -127,7 +132,8 @@ def comm_chest7(player, board):
     
 def comm_chest8(current_player, board):
     print(f"player {current_player.player_number} gains $10 from each player")
-    time.sleep(0.5)
+    if not settings.fast:
+        time.sleep(0.5)
     amount = 10
     for player in board.players:
         if player.player_number == current_player.player_number:
@@ -150,7 +156,8 @@ def comm_chest12(player, board):
     hotel_cost = 115
     total = 0
     print(f"player {player.player_number} must pay ${house_cost} for each house and ${hotel_cost} for each hotel")
-    time.sleep(0.5)
+    if not settings.fast:
+        time.sleep(0.5)
 
     for property in player.properties.values():
         if property.can_develop:
