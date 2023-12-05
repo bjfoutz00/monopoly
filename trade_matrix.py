@@ -1,4 +1,5 @@
-from enums import OwnershipDegree, Colors
+from enums import Colors
+import settings
 import time
 
 # class MetaProperty():
@@ -50,7 +51,7 @@ class TradeMatrix():
     def resolve_trade(self, trade_offer):
         initiator = self.players[trade_offer.initiator]
         recipient = self.players[trade_offer.recipient]
-        print(f"Player {initiator.player_number} offered to trade with player {recipient.player_number}. Here is the offer:")
+        print(f"\nPlayer {initiator.player_number} offered to trade with player {recipient.player_number}. Here is the offer:")
         trade_offer.print_offer()
 
         if not recipient.will_accept_trade_offer(trade_offer):
@@ -73,10 +74,12 @@ class TradeMatrix():
             initiator.gain_real_estate(property, False)
 
         # exchange money
-        initiator.charge(trade_offer.initiator_bundle.money)
-        recipient.add_money(trade_offer.initiator_bundle.money, False)
-        recipient.charge(trade_offer.recipient_bundle.money)
-        initiator.add_money(trade_offer.recipient_bundle.money, False)
+        if trade_offer.initiator_bundle.money > 0:
+            initiator.charge(trade_offer.initiator_bundle.money)
+            recipient.add_money(trade_offer.initiator_bundle.money, False)
+        if trade_offer.recipient_bundle.money > 0:
+            recipient.charge(trade_offer.recipient_bundle.money)
+            initiator.add_money(trade_offer.recipient_bundle.money, False)
 
         # exchange goojf cards
         initiator.goojf_cards -= trade_offer.initiator_bundle.num_goojf_cards
@@ -150,14 +153,16 @@ class TradeMatrix():
     """
     def print_tradeable_properties(self, player_number, trade_offer):
         print(f"Here are player {player_number}'s tradeable properties:")
-        time.sleep(0.5)
+        if not settings.fast:
+            time.sleep(0.5)
         properties_in_offer = set(trade_offer.initiator_bundle.properties) if player_number == trade_offer.initiator else set(trade_offer.recipient_bundle.properties)
         
         for property in self.players[player_number].properties.values():
             if (property.can_develop and property.num_houses > 0) or property in properties_in_offer:
                 continue
             print(f"{property.name_colored} (value: {property.cost})")
-            time.sleep(0.5)
+            if not settings.fast:
+                time.sleep(0.5)
     
     def print_other_players(self, active_player):
         for player in self.players.values():
@@ -168,17 +173,21 @@ class TradeMatrix():
     def print_player_state(self, player_number):
         player = self.players[player_number]
         print(f"Player {player.player_number} ({player.token}):")
-        time.sleep(0.5)
+        if not settings.fast:
+            time.sleep(0.5)
         print(f"\twealth: {player.money}")
-        time.sleep(0.5)
+        if not settings.fast:
+            time.sleep(0.5)
         print("\tproperties:")
-        time.sleep(0.5)
+        if not settings.fast:
+            time.sleep(0.5)
         properties = ""
         for property in player.properties.values():
             properties += f"{property.name_colored}, "
         properties = properties[:-2]
         print(f"\t\t{properties}")
-        time.sleep(0.5)
+        if not settings.fast:
+            time.sleep(0.5)
 
 
 class TradeOffer():
@@ -191,10 +200,12 @@ class TradeOffer():
 
     def print_offer(self):
         print(f"What player {self.initiator} is offering:")
-        time.sleep(0.5)
+        if not settings.fast:
+            time.sleep(0.5)
         self.initiator_bundle.print_bundle()
         print(f"What player {self.initiator} is requesting:")
-        time.sleep(0.5)
+        if not settings.fast:
+            time.sleep(0.5)
         self.recipient_bundle.print_bundle()
     
     def get_text(self):
@@ -222,14 +233,16 @@ class TradeBundle():
                 info += ", "
             info = info[:-2]
             print(info)
-            time.sleep(0.5)
+            if not settings.fast:
+                time.sleep(0.5)
         if self.money > 0:
             print(f"\tMoney: {self.money}")
-            time.sleep(0.5)
+            if not settings.fast:
+                time.sleep(0.5)
         if self.num_goojf_cards > 0:
             print(f"Get Out of Jail Free cards: {self.num_goojf_cards}")
-            time.sleep(0.5)
-        time.sleep(0.5)
+            if not settings.fast:
+                time.sleep(0.5)
 
     def get_text(self):
         text = ""
